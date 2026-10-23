@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SLB Data Error Checking </title>
+  <meta name="description" content="Combine the ULB Service Level Benchmark report (S-1 to S-4) into one sheet and validate KPI values against editable rules.">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap">
+      <h1>SLB Data Error Checking Portal</h1>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- Step 1 -->
+    <section class="card" id="step-report">
+      <div class="step-head"><span class="step-no">1</span><h2>Choose the ULB report</h2></div>
+      <label class="drop" id="drop">
+        <input type="file" id="report-input" accept=".xls,.xlsx">
+        <span class="drop-main">Drop the downloaded <b>.xls</b> report here or <u>browse</u></span>
+        <span class="drop-hint">The file must contain sheets S-1, S-2, S-3 and S-4</span>
+      </label>
+      <p class="file-name" id="report-name" hidden></p>
+    </section>
+
+    <!-- Step 2 -->
+    <section class="card" id="step-rules">
+      <div class="step-head"><span class="step-no">2</span><h2>KPI rules</h2></div>
+      <p class="muted">Rules in use: <b id="rules-source">Built-in rules</b>. Edit them below, or upload your own <code>kpi_rules.xlsx</code>.
+        Your edits are remembered in this browser.</p>
+      <div class="btn-row">
+        <label class="btn">
+          <input type="file" id="rules-input" accept=".xlsx,.xls" hidden>Upload rules workbook
+        </label>
+        <button class="btn" id="rules-download" type="button">Download rules workbook</button>
+        <button class="btn btn-quiet" id="rules-reset" type="button">Reset to built-in rules</button>
+      </div>
+      <p class="msg" id="rules-msg" hidden></p>
+
+      <details class="rules-box">
+        <summary>Edit KPI rules (<span id="rules-active">0</span> of <span id="rules-total">0</span> checked)</summary>
+        <p class="muted small">Leave Min or Max empty for "no limit". Allowed text and Not allowed values are comma-separated, e.g. <code>NA, ND</code> and <code>-, o, -1, 0</code>.
+          If Rule description is empty, a description is written from the other columns.</p>
+        <div class="table-scroll">
+          <table class="rules-table" id="rules-table">
+            <thead>
+              <tr>
+                <th>KPI No</th><th>KPI Name</th><th>Unit</th><th>Check</th><th>Min</th><th>Max</th>
+                <th>Allowed text</th><th>Not allowed values</th><th>Blank allowed</th><th>Rule description</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="rules-box">
+        <summary>District and region list (<span id="regions-count">0</span> districts)</summary>
+        <p class="muted small">To change this list, download the rules workbook, edit the "District and Regions" sheet and upload it again.</p>
+        <div class="table-scroll short">
+          <table class="regions-table" id="regions-table">
+            <thead><tr><th>District</th><th>Region</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <!-- Step 3 -->
+    <section class="card" id="step-run">
+      <div class="step-head"><span class="step-no">3</span><h2>Combine and validate</h2></div>
+      <button class="btn btn-primary" id="merge-btn" type="button" disabled>Combine sheets</button>
+      <p class="msg" id="merge-msg" hidden></p>
+
+      <div id="merge-result" hidden>
+        <div class="result-line">
+          <span id="merge-summary"></span>
+          <button class="btn" id="combined-download" type="button">Download combined file</button>
+        </div>
+        <ul class="log" id="merge-log"></ul>
+
+        <div class="ask" id="ask-validate">
+          <p><b>Proceed with validation?</b></p>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="validate-yes" type="button">Yes, validate</button>
+            <button class="btn" id="validate-no" type="button">No</button>
+          </div>
+        </div>
+        <p class="muted" id="validate-skipped" hidden>Validation skipped. You can still run it with the button above.</p>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="card" id="results" hidden>
+      <div class="step-head"><span class="step-no">4</span><h2>Validation results</h2></div>
+      <div class="stats">
+        <div class="stat"><span class="stat-num" id="stat-issues">0</span><span class="stat-label">Rule issues</span></div>
+        <div class="stat"><span class="stat-num" id="stat-cities">0</span><span class="stat-label">Cities with issues</span></div>
+        <div class="stat"><span class="stat-num" id="stat-zero">0</span><span class="stat-label">Cities with zero in all KPIs</span></div>
+        <div class="stat"><span class="stat-num" id="stat-total">0</span><span class="stat-label">Cities checked</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="validated-download" type="button">Download validated file</button>
+        <button class="btn" id="revalidate-btn" type="button">Validate again with current rules</button>
+      </div>
+
+      <div class="filters">
+        <label>Region <select id="f-region"><option value="">All</option></select></label>
+        <label>KPI <select id="f-kpi"><option value="">All</option></select></label>
+        <label class="grow">City or district <input type="search" id="f-search" placeholder="Search"></label>
+      </div>
+      <p class="muted small" id="filter-count"></p>
+      <div class="table-scroll tall">
+        <table class="issues-table" id="issues-table">
+          <thead>
+            <tr><th>Sr. No.</th><th>District</th><th>Region</th><th>Corporation/ Municipal Council</th><th>KPI No</th><th>KPI Name</th><th>Value</th><th>Problem</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="legend"><span class="swatch red"></span> Breaks a rule <span class="swatch gray"></span> City has zero in all KPIs</p>
+    </section>
+  </main>
+
+  <footer class="wrap foot">Powered by givs01 for Center for Water and Sanitation.</footer>
+
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <script src="assets/default-rules.js"></script>
+  <script src="assets/slb.js"></script>
+  <script src="assets/app.js"></script>
+</body>
+</html>
